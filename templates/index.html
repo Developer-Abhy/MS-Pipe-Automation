@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MS Pipe Design</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="identity-group">
+        <div class="iitr-brand" aria-label="IIT Roorkee">
+          <div class="iitr-seal"><span>IITR</span></div>
+          <div class="iitr-wordmark"><strong>IIT ROORKEE</strong><small>Indian Institute of Technology</small></div>
+        </div>
+        <div class="brand-divider"></div>
+        <div class="hydropipe-brand">
+          <div class="hydropipe-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48" role="img">
+              <path d="M7 13h21a7 7 0 0 1 7 7v2" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+              <path d="M35 22v6a7 7 0 0 1-7 7H14" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+              <path d="M14 28v14M7 35h14" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+              <path d="M35 4c-3 5-6 8-6 12a6 6 0 0 0 12 0c0-4-3-7-6-12z" fill="#4EA5D9"/>
+            </svg>
+          </div>
+          <div><div class="brand">HydroPipe</div><div class="brand-sub">MS PIPE DESIGN</div></div>
+        </div>
+      </div>
+    </header>
+    <main>
+      <section class="hero">
+        
+        <h1>MS Pipe Design</h1>
+        <p>Enter the project details below to generate a pipe design report.</p>
+        
+      </section>
+      <section class="workspace">
+        <form id="designForm">
+          <div class="form-heading">
+            <div><h2>Project inputs</h2></div>
+            <div class="small-note"><span class="required">*</span> Required fields</div>
+          </div>
+          <div class="section-label"><span class="section-number">01</span><div><b>Project information</b><small>Details shown on the generated report</small></div></div>
+          <div class="fields project-fields">
+            {% for f in fields[:5] %}
+            <label class="field">
+              <span>{{ f.label }}{% if f.required %}<i class="required"> *</i>{% endif %}</span>
+              <input name="{{f.key}}" type="{{f.type}}" value="{{defaults.get(f.key,'')}}" {% if f.required %}required{% endif %} {% if f.type == 'email' %}placeholder="name@company.com"{% else %}placeholder="Enter {{f.label|lower}}"{% endif %}>
+            </label>
+            {% endfor %}
+          </div>
+          <div class="section-label"><span class="section-number">02</span><div><b>Hydraulic design inputs</b><small>Flow, length and head conditions</small></div></div>
+          <div class="fields">
+            {% for f in fields[5:8] %}
+            <label class="field"><span>{{f.label}}{% if f.required %}<i class="required"> *</i>{% endif %}</span><div class="input-unit"><input name="{{f.key}}" type="number" step="{{f.step or 'any'}}" min="{{f.min or 0}}" value="{{defaults.get(f.key,'')}}" {% if f.required %}required{% endif %}><em>{{f.unit}}</em></div></label>
+            {% endfor %}
+          </div>
+          <div class="section-label"><span class="section-number">03</span><div><b>Pipe and material properties</b><small>Structural design assumptions and steel properties</small></div></div>
+          <div class="fields">
+            {% for f in fields[8:16] %}
+            <label class="field"><span>{{f.label}}{% if f.required %}<i class="required"> *</i>{% endif %}</span>
+              {% if f.type == 'select' %}<select name="{{f.key}}">{% for opt in f.options %}<option value="{{opt}}" {% if opt|string == defaults.get(f.key)|string %}selected{% endif %}>{{opt}}</option>{% endfor %}</select>
+              {% else %}<div class="input-unit"><input name="{{f.key}}" type="number" step="any" min="{{f.min or 0}}" value="{{defaults.get(f.key,'')}}"><em>{{f.unit}}</em></div>{% endif %}
+            </label>
+            {% endfor %}
+          </div>
+          <div class="section-label"><span class="section-number">04</span><div><b>Soil and bedding assumptions</b><small>Load spread, bedding angle and soil resistance</small></div></div>
+          <div class="fields">
+            {% for f in fields[16:] %}
+            <label class="field"><span>{{f.label}}</span>
+              {% if f.type == 'select' %}<select name="{{f.key}}">{% for opt in f.options %}<option value="{{opt}}" {% if opt|string == defaults.get(f.key)|string %}selected{% endif %}>{{opt}}{% if f.key in ['load_spread','bedding_angle'] %}°{% endif %}</option>{% endfor %}</select>
+              {% else %}<div class="input-unit"><input name="{{f.key}}" type="number" step="any" min="{{f.min or 0}}" value="{{defaults.get(f.key,'')}}"><em>{{f.unit}}</em></div>{% endif %}
+            </label>
+            {% endfor %}
+          </div>
+          <div class="form-actions"><div class="safe-note"><span>Calculations use the supplied workbook formulas. Please verify engineering assumptions before relying on results.</span></div><button id="submitBtn" type="submit"><span>Generate design report</span><b>↗</b></button></div>
+        </form>
+      </section>
+      <section id="resultSection" class="result-section hidden">
+        <div class="result-header"><div><h2 id="resultTitle">Design report</h2><p id="resultSubtitle"></p></div><div class="result-mark">✓</div></div>
+        <div id="summaryCards" class="summary-cards"></div>
+        <div class="checks-head"><h3>Workbook design checks</h3></div>
+        <div id="checksGrid" class="checks-grid"></div>
+        <div class="download-row"><div><b>Report ready</b><p>Download the report or Excel file.</p></div><div class="download-actions"><a id="pdfLink" class="download-primary" href="#">↓ Download PDF</a><a id="xlsxLink" class="download-secondary" href="#">↓ Download Excel</a></div></div>
+      </section>
+      <footer class="site-footer">
+        <div class="footer-credit">
+          <span>Developed by <strong>Abhyudaya &amp; Rahul</strong></span>
+          <span>Under the guidance of <strong>Prof. K. S. Hari Prasad</strong></span>
+        </div>
+        <div class="footer-copyright">© 2026 HydroPipe. All rights reserved.</div>
+      </footer>
+    </main>
+  </div>
+  <div id="toast" class="toast hidden"></div>
+  <script>
+    const form = document.getElementById('designForm');
+    const btn = document.getElementById('submitBtn');
+    const toast = document.getElementById('toast');
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      btn.disabled = true;
+      btn.innerHTML = '<span>Recalculating workbook…</span><b class="spinner"></b>';
+      const values = Object.fromEntries(new FormData(form).entries());
+      try {
+        const response = await fetch('/api/design', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(values)});
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) throw new Error(payload.error || 'Unable to generate report.');
+        const r = payload.result;
+        document.getElementById('resultTitle').textContent = r.project_name || 'Design report';
+        document.getElementById('resultSubtitle').textContent = [r.company_name, r.client_name].filter(Boolean).join(' · ') || 'MS Pipeline detailed design report';
+        const cards = [
+          ['Design discharge', `${r.discharge ?? '—'} m³/s`],
+          ['Pipe length', `${r.length ?? '—'} km`],
+          ['Pipe diameter', `${r.diameter ?? '—'} m`],
+          ['Number of pipes', `${r.pipe_count ?? '—'}`],
+          ['Total head', `${r.head ?? '—'} m`],
+          ['Assumed thickness', `${r.thickness ?? '—'} mm`]
+        ];
+        document.getElementById('summaryCards').innerHTML = cards.map(c => `<div class="summary-card"><span>${escapeHtml(c[0])}</span><b>${escapeHtml(String(c[1]))}</b></div>`).join('');
+        document.getElementById('checksGrid').innerHTML = (r.checks || []).map(c => {
+          const value = String(c.value ?? 'Not available');
+          const ok = value.toLowerCase() === 'ok';
+          return `<div class="check-item"><span class="check-dot ${ok?'good':'warn'}">${ok?'✓':'!'}</span><div><b>${escapeHtml(c.name)}</b><small>${escapeHtml(value)}</small></div></div>`;
+        }).join('');
+        document.getElementById('pdfLink').href = r.downloads.pdf;
+        document.getElementById('xlsxLink').href = r.downloads.xlsx;
+        const section = document.getElementById('resultSection');
+        section.classList.remove('hidden');
+        section.scrollIntoView({behavior:'smooth', block:'start'});
+      } catch (err) {
+        toast.textContent = err.message;
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 8000);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Generate design report</span><b>↗</b>';
+      }
+    });
+    function escapeHtml(value) {
+      return value.replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    }
+  </script>
+</body>
+</html>

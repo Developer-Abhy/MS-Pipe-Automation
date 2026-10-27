@@ -1,0 +1,10 @@
+# Render Blueprint — deploy this repository as a Docker web service.
+services:
+  - type: web
+    name: hydropipe-ms-pipe-design
+    runtime: docker
+    plan: starter
+    healthCheckPath: /
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
